@@ -9,7 +9,10 @@ title: "Module Details: ircv3_labeledresponse (v3)"
 
 ### Description
 
-This module provides support for [the IRCv3 Labeled Response specification](https://ircv3.net/specs/extensions/labeled-response.html).
+This module provides support for [the IRCv3 Labeled Response specification](https://ircv3.net/specs/extensions/labeled-response.html),
+for **registered** clients who negotiated the `batch` capability in addition to `labeled-response`.
+
+
 
 ### Configuration
 
