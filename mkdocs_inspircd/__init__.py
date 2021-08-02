@@ -127,6 +127,12 @@ class InspircdPlugin(mkdocs.plugins.BasePlugin):
             ]
         )
 
+    def core_config_tags(self, config):
+        template = self.env.get_template("config_tags.md.j2")
+        return template.render(
+            configuration=load_yaml(config["docs_dir"] + "/3/configuration/_data.yml")
+        )
+
     def on_page_markdown(self, markdown, page, config, files):
         """Inserts dynamic/generated text in markdown pages."""
         return (
@@ -135,4 +141,5 @@ class InspircdPlugin(mkdocs.plugins.BasePlugin):
             .replace("{{module_umodes_table}}", self.umodes_table(config))
             .replace("{{module_extbans_table}}", self.extbans_table(config))
             .replace("{{module_snomasks_table}}", self.snomasks_table(config))
+            .replace("{{core_config_tags}}", self.core_config_tags(config))
         )
