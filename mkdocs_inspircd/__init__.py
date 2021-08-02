@@ -26,6 +26,19 @@ def yml2md(filename, template):
     return template.render(load_yaml(filename))
 
 
+class LazyContext(jinja2.runtime.Context):
+    """Subclass of jinja2.Context that accepts callables as values, and
+    calls them before substituting their values in templates.
+
+    This allows computing values lazily, instead of evaluating them even
+    if they are not used."""
+    def resolve(self, key):
+        value = super().resolve(key)
+        if hasattr(value, "__call__") and not isinstance(value, jinja2.Undefined):
+            value = value()
+        return value
+
+
 class ExtendedFile(mkdocs.structure.files.File):
     """Like the original File class, but can also be a .yml module
     description."""
@@ -54,6 +67,7 @@ class InspircdPlugin(mkdocs.plugins.BasePlugin):
         self.env = jinja2.Environment(
             loader=jinja2.PackageLoader(__name__),
         )
+        self.env.context_class = LazyContext
         self.module_template = self.env.get_template("module.md.j2")
 
     def on_files(self, files, config):
@@ -140,12 +154,12 @@ class InspircdPlugin(mkdocs.plugins.BasePlugin):
     def on_page_markdown(self, markdown, page, config, files):
         """Runs Jinja on an input markdown file."""
         context = {
-            "module_chmodes": self.chmodes(config),
-            "module_umodes": self.umodes(config),
-            "module_extbans": self.extbans(config),
-            "module_snomasks": self.snomasks(config),
-            "module_tag_extensions": self.tag_extensions(config),
-            "core_config_tags": load_yaml(config["docs_dir"] + "/3/configuration/_data.yml"),
+            "module_chmodes": lambda: self.chmodes(config),
+            "module_umodes": lambda: self.umodes(config),
+            "module_extbans": lambda: self.extbans(config),
+            "module_snomasks": lambda: self.snomasks(config),
+            "module_tag_extensions": lambda: self.tag_extensions(config),
+            "core_config_tags": lambda: load_yaml(config["docs_dir"] + "/3/configuration/_data.yml"),
         }
         template = self.env.from_string(markdown)
         return template.render(context)
