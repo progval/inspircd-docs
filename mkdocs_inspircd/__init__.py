@@ -80,57 +80,43 @@ class InspircdPlugin(mkdocs.plugins.BasePlugin):
                 self._modules.append(load_yaml(module_file))
         return self._modules
 
-    def chmodes_table(self, config):
+    def chmodes(self, config):
         modules = self.modules(config)
-        template = self.env.get_template("mode_table.md.j2")
-        return template.render(
-            modes=[
-                {**mode, "module": module["name"]}
-                for module in modules
-                if "chmodes" in module
-                for mode in module["chmodes"]["chars"]
-            ]
-        )
+        return [
+            {**mode, "module": module["name"]}
+            for module in modules
+            if "chmodes" in module
+            for mode in module["chmodes"]["chars"]
+        ]
 
-    def umodes_table(self, config):
+    def umodes(self, config):
         modules = self.modules(config)
-        template = self.env.get_template("mode_table.md.j2")
-        return template.render(
-            modes=[
-                {**mode, "module": module["name"]}
-                for module in modules
-                if "umodes" in module
-                for mode in module["umodes"]["chars"]
-            ]
-        )
+        return [
+            {**mode, "module": module["name"]}
+            for module in modules
+            if "umodes" in module
+            for mode in module["umodes"]["chars"]
+        ]
 
-    def extbans_table(self, config):
+    def extbans(self, config):
         modules = self.modules(config)
-        template = self.env.get_template("extban_table.md.j2")
-        return template.render(
-            extbans=[
-                {**extban, "module": module["name"]}
-                for module in modules
-                if "extbans" in module
-                for extban in module["extbans"]["chars"]
-            ]
-        )
+        return [
+            {**extban, "module": module["name"]}
+            for module in modules
+            if "extbans" in module
+            for extban in module["extbans"]["chars"]
+        ]
 
-    def snomasks_table(self, config):
+    def snomasks(self, config):
         modules = self.modules(config)
-        template = self.env.get_template("snomask_table.md.j2")
-        return template.render(
-            extbans=[
-                {**snomask, "module": module["name"]}
-                for module in modules
-                if "snomasks" in module
-                for snomask in module["snomasks"]
-            ]
-        )
+        return [
+            {**snomask, "module": module["name"]}
+            for module in modules
+            if "snomasks" in module
+            for snomask in module["snomasks"]
+        ]
 
-    def core_config_tags(self, config):
-        template = self.env.get_template("config_tags.md.j2")
-
+    def tag_extensions(self, config):
         tag_extensions = collections.defaultdict(list)
         for module in self.modules(config):
             for module_tag in module.get("configuration", []):
@@ -149,19 +135,17 @@ class InspircdPlugin(mkdocs.plugins.BasePlugin):
                                     **added_value,
                                 }
                             )
-
-        return template.render(
-            configuration=load_yaml(config["docs_dir"] + "/3/configuration/_data.yml"),
-            tag_extensions=tag_extensions
-        )
+        return tag_extensions
 
     def on_page_markdown(self, markdown, page, config, files):
-        """Inserts dynamic/generated text in markdown pages."""
-        return (
-            markdown
-            .replace("{{module_chmodes_table}}", self.chmodes_table(config))
-            .replace("{{module_umodes_table}}", self.umodes_table(config))
-            .replace("{{module_extbans_table}}", self.extbans_table(config))
-            .replace("{{module_snomasks_table}}", self.snomasks_table(config))
-            .replace("{{core_config_tags}}", self.core_config_tags(config))
-        )
+        """Runs Jinja on an input markdown file."""
+        context = {
+            "module_chmodes": self.chmodes(config),
+            "module_umodes": self.umodes(config),
+            "module_extbans": self.extbans(config),
+            "module_snomasks": self.snomasks(config),
+            "module_tag_extensions": self.tag_extensions(config),
+            "core_config_tags": load_yaml(config["docs_dir"] + "/3/configuration/_data.yml"),
+        }
+        template = self.env.from_string(markdown)
+        return template.render(context)

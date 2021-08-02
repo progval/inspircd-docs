@@ -42,4 +42,6 @@ Disables all enabled snomasks:
 
 ### Modules
 
-{{module_umodes_table}}
+{# use the template defined in mkdocs_inspircd/ #}
+{% set modes = module_umodes %}
+{% include "mode_table.md.j2" %}
